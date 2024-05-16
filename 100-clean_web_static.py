@@ -2,8 +2,9 @@
 """
 Fabric script that cleans up the local archives and the web servers
 """
+import os
 from fabric.api import env, sudo, local
-env.hosts = ['54.84.162.208', '54.175.225.209']
+env.hosts = ['54.234.97.54', '100.25.190.116']
 
 
 def do_clean(number=0):
@@ -12,7 +13,13 @@ def do_clean(number=0):
     if number == 0:
         number = 1
     number += 1
-    local("ls -d -1tr versions/* | tail -n +{} | \
-          xargs -d '\n' rm -f --".format(number))
-    sudo("ls -d -1tr /data/web_static/releases/* | tail -n +{} | \
-        xargs -d '\n' rm -rf --".format(number))
+    archives = sorted(os.listdir("versions"))
+    [archives.pop() for i in range(number)]
+    with lcd("versions"):
+        [local("rm ./{}".format(a)) for a in archives]
+
+    with cd("/data/web_static/releases"):
+        archives = run("ls -tr").split()
+        archives = [a for a in archives if "web_static_" in a]
+        [archives.pop() for i in range(number)]
+        [run("rm -rf ./{}".format(a)) for a in archives]
